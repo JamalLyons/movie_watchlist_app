@@ -1,30 +1,78 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:movie_watchlist_app/main.dart';
+import 'package:movie_watchlist_app/models/movie.dart';
+import 'package:movie_watchlist_app/data/movies_data.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  group('Movie Model Tests', () {
+    test('Movie instance initializes correctly', () {
+      final movie = Movie(
+        title: 'Test Movie',
+        posterPath: 'assets/images/inception.jpg',
+        cast: ['Actor 1', 'Actor 2'],
+        synopsis: 'A test synopsis',
+        isWatchlisted: false,
+      );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+      expect(movie.title, 'Test Movie');
+      expect(movie.posterPath, 'assets/images/inception.jpg');
+      expect(movie.cast.length, 2);
+      expect(movie.synopsis, 'A test synopsis');
+      expect(movie.isWatchlisted, false);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+      movie.isWatchlisted = true;
+      expect(movie.isWatchlisted, true);
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    test('sampleMovies dataset contains required fields and valid paths', () {
+      expect(sampleMovies.length, greaterThanOrEqualTo(4));
+      for (final movie in sampleMovies) {
+        expect(movie.title.isNotEmpty, true);
+        expect(movie.posterPath.startsWith('assets/images/'), true);
+        expect(movie.cast.isNotEmpty, true);
+        expect(movie.synopsis.isNotEmpty, true);
+      }
+    });
+  });
+
+  group('Widget Navigation & UI Smoke Tests', () {
+    testWidgets('HomeScreen loads and displays movie catalog',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(const MovieWatchlistApp());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Movie Watchlist'), findsOneWidget);
+      expect(find.text('Inception'), findsOneWidget);
+      expect(find.text('The Matrix'), findsOneWidget);
+      expect(find.byType(ListView), findsOneWidget);
+    });
+
+    testWidgets('Tapping movie navigates to DetailsScreen',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(const MovieWatchlistApp());
+      await tester.pumpAndSettle();
+
+      // Tap on Inception card
+      await tester.tap(find.text('Inception'));
+      await tester.pumpAndSettle();
+
+      // Should be on DetailsScreen
+      expect(find.text('Cast'), findsOneWidget);
+      expect(find.text('Synopsis'), findsOneWidget);
+      expect(find.text('Leonardo DiCaprio'), findsOneWidget);
+    });
+
+    testWidgets('Navigating to WatchlistScreen shows watchlist view',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(const MovieWatchlistApp());
+      await tester.pumpAndSettle();
+
+      // Tap on watchlist icon in app bar
+      await tester.tap(find.byTooltip('View Watchlist'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('My Watchlist'), findsOneWidget);
+    });
   });
 }
